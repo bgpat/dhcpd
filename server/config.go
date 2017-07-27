@@ -42,10 +42,10 @@ func NewConfig() (*Config, error) {
 func (c *Config) Server() *Server {
 	return &Server{
 		Handler: &Handler{
-			ServerIPAddr: net.ParseIP(c.Server_IP_Addr),
+			ServerIPAddr: net.ParseIP(c.Server_IP_Addr).To4(),
 			Options:      dhcp.Options(c.Options),
 			Leases: Leases{
-				StartIPAddr: net.ParseIP(c.Start_IP_Addr),
+				StartIPAddr: net.ParseIP(c.Start_IP_Addr).To4(),
 				Range:       c.Lease_Range,
 				Duration:    c.Lease_Duration,
 			},

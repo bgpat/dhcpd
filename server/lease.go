@@ -38,6 +38,7 @@ func (l *Leases) Get(addr net.HardwareAddr) *Lease {
 			IPAddr: dhcp.IPAdd(l.StartIPAddr, i),
 			Expiry: time.Now().Add(l.Duration),
 		}
+		l.Table[i] = lease
 		return lease
 	}
 	return nil

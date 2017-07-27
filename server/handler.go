@@ -32,9 +32,9 @@ func (h *Handler) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, options dhc
 		if addr, ok := options[dhcp.OptionServerIdentifier]; ok && !net.IP(addr).Equal(h.ServerIPAddr) {
 			return nil
 		}
-		req := net.IP(options[dhcp.OptionRequestedIPAddress])
+		req := net.IP(options[dhcp.OptionRequestedIPAddress]).To4()
 		if req == nil {
-			req = net.IP(p.CIAddr())
+			req = net.IP(p.CIAddr()).To4()
 		}
 		if len(req) != 4 || req.Equal(net.IPv4zero) {
 			return dhcp.ReplyPacket(p, dhcp.NAK, h.ServerIPAddr, nil, 0, nil)
