@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/bgpat/dhcpd/server"
 )
@@ -9,7 +10,8 @@ import (
 func main() {
 	s, err := server.New()
 	if err == nil {
+		fmt.Printf("%+v\n", s.Handler)
 		err = s.Listen()
 	}
-	log.Fatal(err.Error())
+	fmt.Fprintln(os.Stderr, err.Error())
 }

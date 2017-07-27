@@ -5,7 +5,8 @@ import (
 )
 
 type Server struct {
-	Handler *Handler
+	Handler   *Handler
+	Interface *string
 }
 
 func New() (*Server, error) {
@@ -17,5 +18,8 @@ func New() (*Server, error) {
 }
 
 func (s *Server) Listen() error {
-	return dhcp.ListenAndServe(s.Handler)
+	if s.Interface == nil {
+		return dhcp.ListenAndServe(s.Handler)
+	}
+	return dhcp.ListenAndServeIf(*s.Interface, s.Handler)
 }
