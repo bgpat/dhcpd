@@ -2,6 +2,8 @@ version: "3"
 services:
   dhcpd:
     image: bgpat/dhcpd
+#   build: .
+    network_mode: host
     ports:
       - 67:67/udp
     env_file: .env
