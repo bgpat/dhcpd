@@ -39,7 +39,7 @@ func NewConfig() (*Config, error) {
 	return &c, nil
 }
 
-func (c *Config) Server() *Server {
+func (c *Config) Server(change func(*Lease) dhcp.Packet) *Server {
 	return &Server{
 		Handler: &Handler{
 			ServerIPAddr: net.ParseIP(c.Server_IP_Addr).To4(),
@@ -49,6 +49,7 @@ func (c *Config) Server() *Server {
 				Range:       c.Lease_Range,
 				Duration:    c.Lease_Duration,
 			},
+			Change: change,
 		},
 		Interface: c.Interface,
 	}
