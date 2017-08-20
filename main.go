@@ -5,11 +5,10 @@ import (
 	"os"
 
 	"github.com/bgpat/dhcpd/server"
-	dhcp "github.com/krolaw/dhcp4"
 )
 
 func main() {
-	s, err := server.New(func(lease *server.Lease) dhcp.Packet {
+	s, err := server.New(func(lease *server.Lease) server.Reply {
 		fmt.Printf("lease: %+v\n", lease)
 		return nil
 	})

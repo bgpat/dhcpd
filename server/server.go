@@ -9,7 +9,7 @@ type Server struct {
 	Interface *string
 }
 
-func New(change func(*Lease) dhcp.Packet) (*Server, error) {
+func New(change func(*Lease) Reply) (*Server, error) {
 	config, err := NewConfig()
 	if err != nil {
 		return nil, err
