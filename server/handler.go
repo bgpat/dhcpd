@@ -14,7 +14,7 @@ type Handler struct {
 	Change       func(*Lease) Reply
 }
 
-var processing = map[dhcp.MessageType]map[string]struct{}{}
+var processing = make(map[dhcp.MessageType]map[string]struct{})
 
 func (h *Handler) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, options dhcp.Options) (replyPacket dhcp.Packet) {
 	if _, ok := processing[msgType]; ok {
