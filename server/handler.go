@@ -14,19 +14,26 @@ type Handler struct {
 	Change       func(*Lease) Reply
 }
 
-func (h *Handler) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, options dhcp.Options) dhcp.Packet {
+var processing = map[dhcp.MessageType]map[string]struct{}{}
+
+func (h *Handler) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, options dhcp.Options) (replyPacket dhcp.Packet) {
+	if _, ok := processing[msgType]; ok {
+		return
+	}
+	processing[msgType][p.CHAddr().String()] = struct{}{}
 	switch msgType {
 	case dhcp.Discover:
 		lease := h.Leases.Get(p.CHAddr())
 		if lease == nil {
-			return nil
+			break
 		}
 		if h.Change != nil {
 			if reply := h.Change(lease); reply != nil {
-				return reply.Packet(p, msgType, h, options[dhcp.OptionParameterRequestList])
+				replyPacket = reply.Packet(p, msgType, h, options[dhcp.OptionParameterRequestList])
+				break
 			}
 		}
-		return dhcp.ReplyPacket(
+		replyPacket = dhcp.ReplyPacket(
 			p,
 			dhcp.Offer,
 			h.ServerIPAddr,
@@ -36,30 +43,34 @@ func (h *Handler) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, options dhc
 		)
 	case dhcp.Request:
 		if addr, ok := options[dhcp.OptionServerIdentifier]; ok && !net.IP(addr).Equal(h.ServerIPAddr) {
-			return nil
+			break
 		}
 		req := net.IP(options[dhcp.OptionRequestedIPAddress]).To4()
 		if req == nil {
 			req = net.IP(p.CIAddr()).To4()
 		}
 		if len(req) != 4 || req.Equal(net.IPv4zero) {
-			return dhcp.ReplyPacket(p, dhcp.NAK, h.ServerIPAddr, nil, 0, nil)
+			replyPacket = dhcp.ReplyPacket(p, dhcp.NAK, h.ServerIPAddr, nil, 0, nil)
+			break
 		}
 		i := dhcp.IPRange(h.Leases.StartIPAddr, req) - 1
 		if i < 0 || h.Leases.Range <= i {
-			return dhcp.ReplyPacket(p, dhcp.NAK, h.ServerIPAddr, nil, 0, nil)
+			replyPacket = dhcp.ReplyPacket(p, dhcp.NAK, h.ServerIPAddr, nil, 0, nil)
+			break
 		}
 		lease := h.Leases.Table[i]
 		if lease == nil {
-			return dhcp.ReplyPacket(p, dhcp.NAK, h.ServerIPAddr, nil, 0, nil)
+			replyPacket = dhcp.ReplyPacket(p, dhcp.NAK, h.ServerIPAddr, nil, 0, nil)
+			break
 		}
 		lease.Expiry = time.Now().Add(h.Leases.Duration)
 		if h.Change != nil {
 			if reply := h.Change(lease); reply != nil {
-				return reply.Packet(p, msgType, h, options[dhcp.OptionParameterRequestList])
+				replyPacket = reply.Packet(p, msgType, h, options[dhcp.OptionParameterRequestList])
+				break
 			}
 		}
-		return dhcp.ReplyPacket(
+		replyPacket = dhcp.ReplyPacket(
 			p,
 			dhcp.ACK,
 			h.ServerIPAddr,
@@ -70,5 +81,6 @@ func (h *Handler) ServeDHCP(p dhcp.Packet, msgType dhcp.MessageType, options dhc
 	case dhcp.Release, dhcp.Decline:
 		h.Leases.Delete(p.CHAddr())
 	}
+	delete(processing[msgType], p.CHAddr().String())
 	return nil
 }
